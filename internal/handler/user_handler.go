@@ -12,7 +12,7 @@ type UserHandler struct {
 	service service.UserService
 }
 
-type signUpRequest struct {
+type registrationRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
@@ -22,7 +22,7 @@ func NewUserHandler(service service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) Register(c *gin.Context) {
-	var req signUpRequest
+	var req registrationRequest
 
 	if err := c.Bind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
@@ -47,5 +47,37 @@ func (h *UserHandler) Register(c *gin.Context) {
 		"id":    user.ID,
 		"email": user.Email,
 		"role":  user.Role,
+	})
+}
+
+func (h *UserHandler) Login(c *gin.Context) {
+	var req registrationRequest
+
+	if err := c.Bind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
+		return
+	}
+
+	// Look up the user by email
+	tokenString, err := h.service.Login(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		switch err {
+		case appErr.ErrUserNotFound:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		case appErr.ErrInvalidPassword:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+
+	// Set cookie with token in response
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "/", "", false, true)
+
+	// Sent back token and user info
+	c.JSON(http.StatusOK, gin.H{
+		"token": tokenString,
 	})
 }

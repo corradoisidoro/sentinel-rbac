@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/corradoisidoro/sentinel-rbac/internal/config"
 	appErr "github.com/corradoisidoro/sentinel-rbac/internal/errors"
 	"github.com/corradoisidoro/sentinel-rbac/internal/models"
 	"github.com/corradoisidoro/sentinel-rbac/internal/repository/mocks"
@@ -15,7 +16,8 @@ import (
 
 func TestUserService_SignUp_Success(t *testing.T) {
 	repo := new(mocks.UserRepositoryMock)
-	svc := service.NewUserService(repo)
+	config := config.Config{}
+	svc := service.NewUserService(repo, config)
 
 	repo.On("FindByEmail", mock.Anything, "test@example.com").
 		Return(nil, nil)
@@ -36,7 +38,8 @@ func TestUserService_SignUp_Success(t *testing.T) {
 
 func TestUserService_SignUp_UserAlreadyExists(t *testing.T) {
 	repo := new(mocks.UserRepositoryMock)
-	svc := service.NewUserService(repo)
+	config := config.Config{}
+	svc := service.NewUserService(repo, config)
 
 	repo.On("FindByEmail", mock.Anything, "test@example.com").
 		Return(&models.User{Email: "test@example.com"}, nil)
@@ -52,7 +55,8 @@ func TestUserService_SignUp_UserAlreadyExists(t *testing.T) {
 
 func TestUserService_SignUp_InvalidInput(t *testing.T) {
 	repo := new(mocks.UserRepositoryMock)
-	svc := service.NewUserService(repo)
+	config := config.Config{}
+	svc := service.NewUserService(repo, config)
 
 	user, err := svc.Register(context.Background(), "", "123")
 
