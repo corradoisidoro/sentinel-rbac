@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	appErr "github.com/corradoisidoro/sentinel-rbac/internal/errors"
 	"github.com/corradoisidoro/sentinel-rbac/internal/service"
@@ -14,7 +15,12 @@ type UserHandler struct {
 
 type registrationRequest struct {
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+type loginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
 func NewUserHandler(service service.UserService) *UserHandler {
@@ -24,8 +30,8 @@ func NewUserHandler(service service.UserService) *UserHandler {
 func (h *UserHandler) Register(c *gin.Context) {
 	var req registrationRequest
 
-	if err := c.Bind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrFailedToParseRequestBody})
 		return
 	}
 
@@ -33,11 +39,11 @@ func (h *UserHandler) Register(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case appErr.ErrUserAlreadyExists:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusConflict, gin.H{"error": appErr.ErrUserAlreadyExists})
 		case appErr.ErrInvalidInput:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrInvalidInput})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": appErr.ErrInternal})
 		}
 
 		return
@@ -51,33 +57,36 @@ func (h *UserHandler) Register(c *gin.Context) {
 }
 
 func (h *UserHandler) Login(c *gin.Context) {
-	var req registrationRequest
+	var req loginRequest
 
-	if err := c.Bind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrFailedToParseRequestBody})
 		return
 	}
 
-	// Look up the user by email
 	tokenString, err := h.service.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		switch err {
-		case appErr.ErrUserNotFound:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		case appErr.ErrInvalidPassword:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		case appErr.ErrUserNotFound, appErr.ErrInvalidPassword:
+			c.JSON(http.StatusUnauthorized, gin.H{"error": appErr.ErrInvalidPassword})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": appErr.ErrInternal})
 		}
 		return
 	}
 
-	// Set cookie with token in response
+	const thirtyDays = 30 * 24 * time.Hour
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "/", "", false, true)
+	c.SetCookie("Authorization", tokenString, int(thirtyDays.Seconds()), "/", "", false, true)
 
-	// Sent back token and user info
 	c.JSON(http.StatusOK, gin.H{
-		"token": tokenString,
+		"message": "logged in successfully",
+		"token":   tokenString,
 	})
+}
+
+func (h *UserHandler) Validate(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "User is authenticated",
+		"user":    c.MustGet("user")})
 }

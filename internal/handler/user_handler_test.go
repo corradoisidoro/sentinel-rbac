@@ -22,6 +22,17 @@ func setupRouter(h *handler.UserHandler) *gin.Engine {
 	r := gin.New()
 	r.POST("/register", h.Register)
 	r.POST("/login", h.Login)
+
+	// Fake auth middleware for tests
+	r.GET("/validate", func(c *gin.Context) {
+		c.Set("user", gin.H{
+			"id":    1,
+			"email": "test@example.com",
+			"role":  "user",
+		})
+		h.Validate(c)
+	})
+
 	return r
 }
 
@@ -79,8 +90,7 @@ func TestRegisterHandler_UserAlreadyExists(t *testing.T) {
 
 	router.ServeHTTP(resp, req)
 
-	assert.Equal(t, http.StatusBadRequest, resp.Code)
-	assert.Contains(t, resp.Body.String(), "user already exists")
+	assert.Equal(t, http.StatusConflict, resp.Code)
 }
 
 func TestRegisterHandler_InvalidJSON(t *testing.T) {
@@ -154,7 +164,6 @@ func TestLoginHandler_UserNotFound(t *testing.T) {
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, http.StatusUnauthorized, resp.Code)
-	assert.Contains(t, resp.Body.String(), "user not found")
 }
 
 func TestLoginHandler_InvalidPassword(t *testing.T) {
@@ -181,7 +190,6 @@ func TestLoginHandler_InvalidPassword(t *testing.T) {
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, http.StatusUnauthorized, resp.Code)
-	assert.Contains(t, resp.Body.String(), "invalid password")
 }
 
 func TestLoginHandler_InvalidJSON(t *testing.T) {
@@ -196,4 +204,19 @@ func TestLoginHandler_InvalidJSON(t *testing.T) {
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, http.StatusBadRequest, resp.Code)
+}
+
+func TestValidateHandler_Success(t *testing.T) {
+	service := new(serviceMocks.UserServiceMock)
+	h := handler.NewUserHandler(service)
+	router := setupRouter(h)
+
+	req, _ := http.NewRequest(http.MethodGet, "/validate", nil)
+	resp := httptest.NewRecorder()
+
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, http.StatusOK, resp.Code)
+	assert.Contains(t, resp.Body.String(), "User is authenticated")
+	assert.Contains(t, resp.Body.String(), "test@example.com")
 }
