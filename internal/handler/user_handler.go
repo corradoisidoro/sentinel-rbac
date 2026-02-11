@@ -85,7 +85,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	})
 }
 
-func (h *UserHandler) Validate(c *gin.Context) {
+func (h *UserHandler) Profile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User is authenticated",
 		"user":    c.MustGet("user")})

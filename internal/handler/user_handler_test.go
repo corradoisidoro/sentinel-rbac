@@ -25,13 +25,13 @@ func setupRouter(h *handler.UserHandler) *gin.Engine {
 	r.POST("/logout", h.Logout)
 
 	// Fake auth middleware for tests
-	r.GET("/validate", func(c *gin.Context) {
+	r.GET("/profile", func(c *gin.Context) {
 		c.Set("user", gin.H{
 			"id":    1,
 			"email": "test@example.com",
 			"role":  "user",
 		})
-		h.Validate(c)
+		h.Profile(c)
 	})
 
 	return r
@@ -207,12 +207,12 @@ func TestLoginHandler_InvalidJSON(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.Code)
 }
 
-func TestValidateHandler_Success(t *testing.T) {
+func TestProfileHandler_Success(t *testing.T) {
 	service := new(serviceMocks.UserServiceMock)
 	h := handler.NewUserHandler(service)
 	router := setupRouter(h)
 
-	req, _ := http.NewRequest(http.MethodGet, "/validate", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/profile", nil)
 	resp := httptest.NewRecorder()
 
 	router.ServeHTTP(resp, req)
