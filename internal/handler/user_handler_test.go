@@ -22,6 +22,7 @@ func setupRouter(h *handler.UserHandler) *gin.Engine {
 	r := gin.New()
 	r.POST("/register", h.Register)
 	r.POST("/login", h.Login)
+	r.POST("/logout", h.Logout)
 
 	// Fake auth middleware for tests
 	r.GET("/validate", func(c *gin.Context) {
@@ -219,4 +220,24 @@ func TestValidateHandler_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.Code)
 	assert.Contains(t, resp.Body.String(), "User is authenticated")
 	assert.Contains(t, resp.Body.String(), "test@example.com")
+}
+
+func TestLogoutHandler_Success(t *testing.T) {
+	service := new(serviceMocks.UserServiceMock)
+	h := handler.NewUserHandler(service)
+	router := setupRouter(h)
+
+	req, _ := http.NewRequest(http.MethodPost, "/logout", nil)
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, http.StatusOK, resp.Code)
+	assert.Contains(t, resp.Body.String(), "logged out successfully")
+
+	// Verify cookie is expired
+	cookies := resp.Result().Cookies()
+	assert.Len(t, cookies, 1)
+	assert.Equal(t, "Authorization", cookies[0].Name)
+	assert.Equal(t, "", cookies[0].Value)
+	assert.Equal(t, -1, cookies[0].MaxAge)
 }

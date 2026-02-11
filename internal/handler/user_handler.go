@@ -90,3 +90,10 @@ func (h *UserHandler) Validate(c *gin.Context) {
 		"message": "User is authenticated",
 		"user":    c.MustGet("user")})
 }
+
+func (h *UserHandler) Logout(c *gin.Context) {
+	c.SetCookie("Authorization", "", -1, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "logged out successfully",
+	})
+}
