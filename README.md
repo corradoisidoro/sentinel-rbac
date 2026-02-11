@@ -5,10 +5,70 @@
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)]()
 
-Sentinel RBAC is a clean, production-grade REST API built in Go that demonstrates best practices for authentication, authorization, rate limiting, and service architecture.
-A Go backend service featuring secure JWT authentication and granular Role-Based Access Control (RBAC). Designed with security-first middleware to protect sensitive administrative endpoints.
+**Sentinel RBAC** is a Go REST API showcasing best‑practice architecture for authentication, authorization, rate limiting, and secure service design. It features robust JWT‑based authentication, granular role‑based access control, and security‑first middleware that protects sensitive administrative endpoints.
 
-✨ Key Highlights
+While intentionally simple and free of unnecessary complexity, the project is designed as a clear, practical demonstration of how to structure a secure, production‑ready Go service without over‑engineering.
+
+---
+
+## User Flow & RBAC Outcome Diagram
+                                      ┌──────────────────────┐
+                                      │      /profile        │
+                                      │        (GET)         │
+                                      └──────────┬───────────┘
+                                                 │
+                                                 ▼
+                                       User not authenticated
+                                                 │
+                                                 ▼
+                                              HTTP 401
+
+
+───────────────────────────────────────────────────────────────────────────────
+
+
+        ┌──────────────────────┐
+        │      /register       │
+        │        (POST)        │
+        └──────────┬───────────┘
+                   │
+                   ▼
+             User created
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │       /login         │
+        │        (POST)        │
+        └──────────┬───────────┘
+                   │
+                   ▼
+                JWT issued
+                   │
+                   │
+                   ├───────────────────────────────────────────────┐
+                   │                                               │
+                   ▼                                               ▼
+
+        ┌──────────────────────┐                       ┌──────────────────────┐
+        │       /admin         │                       │      /profile        │
+        │        (GET)         │                       │        (GET)         │
+        └──────────┬───────────┘                       └──────────┬───────────┘
+                   │                                               │
+                   ▼                                               ▼
+        Role check failed (not admin)                        Access granted
+                   │                                               │
+                   ▼                                               ▼
+                HTTP 403                                 ┌──────────────────────┐
+                                                         │       /logout        │
+                                                         │        (POST)        │
+                                                         └──────────┬───────────┘
+                                                                    │
+                                                                    ▼
+                                                             Token revoked
+
+---             
+
+## ✨ Key Highlights
 - 🔑 JWT Authentication
 - 🛂 Role-Based Access Control (RBAC)
 - 🚦 Multi-Layer Rate Limiting (Global, IP, Route)
@@ -19,7 +79,9 @@ A Go backend service featuring secure JWT authentication and granular Role-Based
 - 🗄️ Database Migrations with GORM
 - ⚙️ Config-Driven Setup
 
-🧠 Why This Project Exists
+---
+
+## 🧠 Why This Project Exists
 This project was built to demonstrate:
 - How I design maintainable Go services
 - How I think about security and abuse prevention
@@ -28,7 +90,9 @@ This project was built to demonstrate:
 
 It avoids unnecessary frameworks and over-engineering while still addressing real production concerns.
 
-🏗️ Architecture Overview
+--- 
+
+## 🏗️ Architecture Overview
 ```
 cmd/
 └── main.go              # Application entrypoint
@@ -42,7 +106,9 @@ internal/
 └── service/             # Business logic
 ```
 
-🚦 Rate Limiting Strategy
+---
+
+## 🚦 Rate Limiting Strategy
 Sentinel RBAC implements multi-layer rate limiting using golang.org/x/time/rate:
 | Layer     | Purpose                      |
 | --------- | ---------------------------- |
@@ -50,49 +116,50 @@ Sentinel RBAC implements multi-layer rate limiting using golang.org/x/time/rate:
 | Per-IP    | Prevents abuse               |
 | Per-Route | Protects expensive endpoints |
 
-🚀 Running the Project
+---
 
-Prerequisites
+## 🚀 Running the Project
+
+**Prerequisites**
 - Go 1.21+
 - Git
 
-Clone & Run
+## Clone & Run
 ```bash
 git clone https://github.com/corradoisidoro/sentinel-rbac.git
 cd sentinel-rbac
 go run ./cmd
 ```
 
-Environment Variables
+## Environment Variables
 ```
 DATABASE_URL=sentinel.db
 JWT_SECRET=super-secret-key
 SERVER_PORT=8080
 ```
 
-📡 API Endpoints
+## 📡 API Endpoints
 
-Public
-- GET /ping — Health check
-- POST /api/auth/register
-- POST /api/auth/login
+**Public**
+- ```GET /ping — Health check```
+- ```POST /api/auth/register```
+- ```POST /api/auth/login```
 
-Authenticated
-- POST /api/auth/logout
-- GET /api/users/profile
+**Authenticated**
+- ```POST /api/auth/logout```
+- ```GET /api/users/profile```
 
-Admin Only
-- GET /api/users/admin
+**Admin Only**
+- ```GET /api/users/admin```
 
-🧪 Testing
+## 🧪 Testing
 ```bash
 go test ./...
 go test ./... -v
 go test -race ./...
 ```
 
-🧰 Tech Stack
-
+## 🧰 Tech Stack
 - Language: Go
 - Framework: Gin
 - ORM: GORM
