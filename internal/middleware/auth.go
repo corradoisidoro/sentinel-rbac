@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/corradoisidoro/sentinel-rbac/internal/models"
+
 	"github.com/corradoisidoro/sentinel-rbac/internal/errors"
 	"github.com/corradoisidoro/sentinel-rbac/internal/repository"
 	"github.com/gin-gonic/gin"
@@ -60,5 +62,33 @@ func (m *AuthMiddleware) RequireAuth(c *gin.Context) {
 		c.Next()
 	} else {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": errors.ErrInvalidClaims.Error()})
+	}
+}
+
+func (m *AuthMiddleware) AuthorizeRole(roles ...string) gin.HandlerFunc {
+	roleSet := make(map[string]bool)
+	for _, r := range roles {
+		roleSet[r] = true
+	}
+
+	return func(c *gin.Context) {
+		val, exists := c.Get("user")
+		if !exists {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		usr, ok := val.(*models.User)
+		if !ok {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		if !roleSet[usr.Role] {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		c.Next()
 	}
 }

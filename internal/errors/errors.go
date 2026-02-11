@@ -2,8 +2,6 @@ package errors
 
 import (
 	"errors"
-
-	"github.com/gin-gonic/gin"
 )
 
 var (
@@ -12,6 +10,7 @@ var (
 	ErrUserNotFound      = errors.New("user not found")
 	ErrInvalidInput      = errors.New("invalid input")
 	ErrInternal          = errors.New("internal server error")
+	ErrInvalidRole       = errors.New("invalid role")
 
 	// --- Auth & JWT Errors ---
 	ErrInvalidPassword         = errors.New("invalid email or password")
@@ -29,7 +28,3 @@ var (
 	// --- Handler Errors ---
 	ErrFailedToParseRequestBody = errors.New("failed to parse request body")
 )
-
-func AbortWithStatus(c *gin.Context, status int, err error) {
-	c.AbortWithStatusJSON(status, gin.H{"error": err.Error()})
-}

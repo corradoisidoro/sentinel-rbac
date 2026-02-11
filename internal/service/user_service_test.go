@@ -25,7 +25,7 @@ func TestUserService_SignUp_Success(t *testing.T) {
 	repo.On("Create", mock.Anything, mock.AnythingOfType("*models.User")).
 		Return(nil)
 
-	user, err := svc.Register(context.Background(), "test@example.com", "password123")
+	user, err := svc.Register(context.Background(), "test@example.com", "password123", "user")
 
 	require.NoError(t, err)
 	require.NotNil(t, user)
@@ -44,7 +44,7 @@ func TestUserService_SignUp_UserAlreadyExists(t *testing.T) {
 	repo.On("FindByEmail", mock.Anything, "test@example.com").
 		Return(&models.User{Email: "test@example.com"}, nil)
 
-	user, err := svc.Register(context.Background(), "test@example.com", "password123")
+	user, err := svc.Register(context.Background(), "test@example.com", "password123", "user")
 
 	require.Error(t, err)
 	assert.Nil(t, user)
@@ -58,7 +58,7 @@ func TestUserService_SignUp_InvalidInput(t *testing.T) {
 	config := config.Config{}
 	svc := service.NewUserService(repo, config)
 
-	user, err := svc.Register(context.Background(), "", "123")
+	user, err := svc.Register(context.Background(), "", "123", "user")
 
 	require.Error(t, err)
 	assert.Nil(t, user)

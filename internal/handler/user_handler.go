@@ -16,6 +16,7 @@ type UserHandler struct {
 type registrationRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
+	Role     string `json:"role" binding:"required,oneof=user admin"`
 }
 
 type loginRequest struct {
@@ -29,21 +30,22 @@ func NewUserHandler(service service.UserService) *UserHandler {
 
 func (h *UserHandler) Register(c *gin.Context) {
 	var req registrationRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrFailedToParseRequestBody})
+		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrFailedToParseRequestBody.Error()})
 		return
 	}
 
-	user, err := h.service.Register(c.Request.Context(), req.Email, req.Password)
+	user, err := h.service.Register(c.Request.Context(), req.Email, req.Password, req.Role)
 	if err != nil {
 		switch err {
 		case appErr.ErrUserAlreadyExists:
-			c.JSON(http.StatusConflict, gin.H{"error": appErr.ErrUserAlreadyExists})
+			c.JSON(http.StatusConflict, gin.H{"error": appErr.ErrUserAlreadyExists.Error()})
 		case appErr.ErrInvalidInput:
-			c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrInvalidInput})
+			c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrInvalidInput.Error()})
+		case appErr.ErrInvalidRole:
+			c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrInvalidRole.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": appErr.ErrInternal})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": appErr.ErrInternal.Error()})
 		}
 
 		return
@@ -60,7 +62,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 	var req loginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrFailedToParseRequestBody})
+		c.JSON(http.StatusBadRequest, gin.H{"error": appErr.ErrFailedToParseRequestBody.Error()})
 		return
 	}
 
@@ -68,9 +70,9 @@ func (h *UserHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case appErr.ErrUserNotFound, appErr.ErrInvalidPassword:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": appErr.ErrInvalidPassword})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": appErr.ErrInvalidPassword.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": appErr.ErrInternal})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": appErr.ErrInternal.Error()})
 		}
 		return
 	}
@@ -95,5 +97,11 @@ func (h *UserHandler) Logout(c *gin.Context) {
 	c.SetCookie("Authorization", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "logged out successfully",
+	})
+}
+
+func (h *UserHandler) Admin(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Welcome to the admin dashboard",
 	})
 }

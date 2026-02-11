@@ -47,6 +47,7 @@ func TestRegisterHandler_Success(t *testing.T) {
 		mock.Anything,
 		"test@example.com",
 		"password123",
+		mock.Anything,
 	).Return(&models.User{
 		Model: gorm.Model{ID: 1},
 		Email: "test@example.com",
@@ -56,6 +57,7 @@ func TestRegisterHandler_Success(t *testing.T) {
 	body, _ := json.Marshal(gin.H{
 		"email":    "test@example.com",
 		"password": "password123",
+		"role":     "user",
 	})
 
 	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
@@ -83,6 +85,7 @@ func TestRegisterHandler_UserAlreadyExists(t *testing.T) {
 	body, _ := json.Marshal(gin.H{
 		"email":    "test@example.com",
 		"password": "password123",
+		"role":     "user",
 	})
 
 	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))

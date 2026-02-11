@@ -12,7 +12,7 @@ type UserServiceMock struct {
 	mock.Mock
 }
 
-func (m *UserServiceMock) Register(ctx context.Context, email, password string) (*models.User, error) {
+func (m *UserServiceMock) Register(ctx context.Context, email, password, role string) (*models.User, error) {
 	args := m.Called(ctx, email, password)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

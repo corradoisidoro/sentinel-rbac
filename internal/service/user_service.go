@@ -13,7 +13,7 @@ import (
 )
 
 type UserService interface {
-	Register(ctx context.Context, email, password string) (*models.User, error)
+	Register(ctx context.Context, email, password, role string) (*models.User, error)
 	Login(ctx context.Context, email, password string) (string, error)
 }
 
@@ -26,8 +26,8 @@ func NewUserService(repo repository.UserRepository, config config.Config) UserSe
 	return &userService{repo: repo, config: config}
 }
 
-func (s *userService) Register(ctx context.Context, email, password string) (*models.User, error) {
-	if email == "" || password == "" || len(password) < 6 {
+func (s *userService) Register(ctx context.Context, email, password, role string) (*models.User, error) {
+	if email == "" || password == "" || len(password) < 8 || role == "" {
 		return nil, appErr.ErrInvalidInput
 	}
 
@@ -47,7 +47,7 @@ func (s *userService) Register(ctx context.Context, email, password string) (*mo
 	user := &models.User{
 		Email:    email,
 		Password: string(hashedPassword),
-		Role:     "user",
+		Role:     role,
 	}
 
 	if err := s.repo.Create(ctx, user); err != nil {
