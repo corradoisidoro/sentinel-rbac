@@ -66,6 +66,20 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
+	// Add rate limiter (production defaults – global safety limiter)
+	rateLimiter := middleware.NewRateLimiter(middleware.RateLimiterConfig{
+		GlobalRPS:   500,
+		GlobalBurst: 1000,
+
+		IPRPS:   20,
+		IPBurst: 40,
+
+		RouteRPS:   100,
+		RouteBurst: 200,
+	})
+
+	router.Use(rateLimiter)
+
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
