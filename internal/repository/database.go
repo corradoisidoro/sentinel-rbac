@@ -1,23 +1,38 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/corradoisidoro/sentinel-rbac/internal/models"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-func Connect(databaseUrl string) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(databaseUrl), &gorm.Config{})
+func Connect(dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return db
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, err
+	}
+
+	// Basic connection pool settings
+	sqlDB.SetMaxOpenConns(10)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	if err := sqlDB.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
-func Migrate(db *gorm.DB) {
-	err := db.AutoMigrate(&models.User{})
-	if err != nil {
-		panic(err)
-	}
+func Migrate(db *gorm.DB) error {
+	return db.AutoMigrate(
+		&models.User{},
+	)
 }
