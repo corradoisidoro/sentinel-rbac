@@ -1,168 +1,166 @@
 # Sentinel RBAC 🔐
 
-[![Go](https://img.shields.io/badge/go-1.25-blue.svg)](https://golang.org)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)]()
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat&logo=go)](https://golang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen?style=flat)]()
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=flat)]()
+[![Swagger](https://img.shields.io/badge/docs-swagger-85EA2D?style=flat&logo=swagger)](http://localhost:8080/swagger/index.html)
 
-**Sentinel RBAC** is a Go REST API showcasing best‑practice architecture for authentication, authorization, rate limiting, and secure service design. It features robust JWT‑based authentication, granular role‑based access control, and security‑first middleware that protects sensitive administrative endpoints.
-
-While intentionally simple and free of unnecessary complexity, the project is designed as a clear, practical demonstration of how to structure a secure, production‑ready Go service without over‑engineering.
-
----
-
-## User Flow & RBAC Outcome Diagram
-                                      ┌──────────────────────┐
-                                      │      /profile        │
-                                      │        (GET)         │
-                                      └──────────┬───────────┘
-                                                 │
-                                                 ▼
-                                       User not authenticated
-                                                 │
-                                                 ▼
-                                              HTTP 401
-
-
-───────────────────────────────────────────────────────────────────────────────
-
-
-        ┌──────────────────────┐
-        │      /register       │
-        │        (POST)        │
-        └──────────┬───────────┘
-                   │
-                   ▼
-             User created
-                   │
-                   ▼
-        ┌──────────────────────┐
-        │       /login         │
-        │        (POST)        │
-        └──────────┬───────────┘
-                   │
-                   ▼
-                JWT issued
-                   │
-                   │
-                   ├───────────────────────────────────────────────┐
-                   │                                               │
-                   ▼                                               ▼
-
-        ┌──────────────────────┐                       ┌──────────────────────┐
-        │       /admin         │                       │      /profile        │
-        │        (GET)         │                       │        (GET)         │
-        └──────────┬───────────┘                       └──────────┬───────────┘
-                   │                                               │
-                   ▼                                               ▼
-        Role check failed (not admin)                        Access granted
-                   │                                               │
-                   ▼                                               ▼
-                HTTP 403                                 ┌──────────────────────┐
-                                                         │       /logout        │
-                                                         │        (POST)        │
-                                                         └──────────┬───────────┘
-                                                                    │
-                                                                    ▼
-                                                             Token revoked
-
----             
-
-## ✨ Key Highlights
-- 🔑 JWT Authentication
-- 🛂 Role-Based Access Control (RBAC)
-- 🚦 Multi-Layer Rate Limiting (Global, IP, Route)
-- 🧱 Clean Architecture (Handler → Service → Repository)
-- 🛡️ Security-Focused Design
-- 🔄 Graceful Shutdown
-- 🧪 Testable & Deterministic Middleware
-- 🗄️ Database Migrations with GORM
-- ⚙️ Config-Driven Setup
+A Go REST API demonstrating best-practice architecture for authentication, authorization, and secure service design — built with clarity and simplicity in mind, not complexity for its own sake.
 
 ---
 
-## 🧠 Why This Project Exists
-This project was built to demonstrate:
-- How I design maintainable Go services
-- How I think about security and abuse prevention
-- How I balance simplicity vs production readiness
-- How I structure APIs that scale beyond MVPs
+## What This Demonstrates
 
-It avoids unnecessary frameworks and over-engineering while still addressing real production concerns.
+- How to structure a clean, layered Go service (Handler → Service → Repository)
+- JWT authentication with secure cookie handling
+- Role-based access control with reusable middleware
+- Multi-layer rate limiting without third-party dependencies
+- Graceful shutdown and config-driven setup
+- Auto-generated, interactive API documentation via Swagger
 
---- 
+---
 
-## 🏗️ Architecture Overview
+## Architecture
+
 ```
-cmd/
-└── main.go              # Application entrypoint
-
-internal/
-├── config/              # Configuration loading & validation
-├── handler/             # HTTP handlers (Gin)
-├── middleware/          # Auth, RBAC, Rate Limiting
-├── models/              # Database models
-├── repository/          # Data access layer
-└── service/             # Business logic
+sentinel-rbac/
+├── cmd/
+│   └── api/
+│       └── main.go           # Entrypoint, wiring, server lifecycle
+├── internal/
+│   ├── config/               # Environment config loading & validation
+│   ├── handler/              # HTTP handlers (Gin) + Swagger annotations
+│   ├── middleware/            # Auth, RBAC, Rate Limiting
+│   ├── models/               # GORM models
+│   ├── repository/           # Data access layer
+│   └── service/              # Business logic
+└── docs/                     # Auto-generated Swagger spec (do not edit)
 ```
 
 ---
 
-## 🚦 Rate Limiting Strategy
-Sentinel RBAC implements multi-layer rate limiting using golang.org/x/time/rate:
-| Layer     | Purpose                      |
-| --------- | ---------------------------- |
-| Global    | Protects server capacity     |
-| Per-IP    | Prevents abuse               |
-| Per-Route | Protects expensive endpoints |
+## Quick Start
 
----
+**Prerequisites:** Go 1.21+, Git
 
-## 🚀 Running the Project
-
-**Prerequisites**
-- Go 1.21+
-- Git
-
-## Clone & Run
 ```bash
 git clone https://github.com/corradoisidoro/sentinel-rbac.git
 cd sentinel-rbac
-go run ./cmd
 ```
 
-## Environment Variables
-```
+Create a `.env` file or export the following:
+
+```env
 DATABASE_URL=sentinel.db
-JWT_SECRET=super-secret-key
+JWT_SECRET=your-secret-key-here
 SERVER_PORT=8080
 ```
 
-## 📡 API Endpoints
+Run the server:
 
-**Public**
-- ```GET /ping — Health check```
-- ```POST /api/auth/register```
-- ```POST /api/auth/login```
-
-**Authenticated**
-- ```POST /api/auth/logout```
-- ```GET /api/users/profile```
-
-**Admin Only**
-- ```GET /api/users/admin```
-
-## 🧪 Testing
 ```bash
-go test ./...
-go test ./... -v
-go test -race ./...
+go run ./cmd/api
 ```
 
-## 🧰 Tech Stack
-- Language: Go
-- Framework: Gin
-- ORM: GORM
-- Auth: JWT
-- Rate Limiting: golang.org/x/time/rate
-- Database: SQLite (portable)
+The API will be available at `http://localhost:8080`.
+
+---
+
+## API Documentation (Swagger)
+
+Sentinel RBAC ships with interactive API documentation generated by [swaggo/swag](https://github.com/swaggo/swag).
+
+**Access the Swagger UI:**
+```
+http://localhost:8080/swagger/index.html
+```
+
+The UI lets you explore all endpoints, inspect request/response schemas, and execute live requests directly from the browser — no Postman needed.
+
+**Regenerating the docs** (required after modifying handler annotations):
+
+```bash
+# Install swag CLI if you haven't already
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Regenerate
+swag init --dir ./cmd/api,./internal/handler --output ./docs
+```
+
+> The `docs/` directory is auto-generated. Do not edit those files manually.
+
+---
+
+## API Endpoints
+
+| Method | Path | Auth | Role | Description |
+|--------|------|------|------|-------------|
+| GET | `/ping` | — | — | Health check |
+| POST | `/api/auth/register` | — | — | Create account |
+| POST | `/api/auth/login` | — | — | Login, receive JWT |
+| POST | `/api/auth/logout` | ✅ | any | Clear auth cookie |
+| GET | `/api/users/profile` | ✅ | any | Get own profile |
+| GET | `/api/users/admin` | ✅ | admin | Admin dashboard |
+
+---
+
+## User Flow
+
+```
+POST /register ──► POST /login ──► JWT issued
+                                       │
+                    ┌──────────────────┴──────────────────┐
+                    ▼                                      ▼
+             GET /profile                          GET /admin
+             (any role)                            (admin only)
+             HTTP 200 ✅                           HTTP 403 ❌ if not admin
+                    │
+                    ▼
+             POST /logout
+             Cookie cleared
+```
+
+**Unauthenticated access to protected routes returns HTTP 401.**
+
+---
+
+## Rate Limiting
+
+Three independent layers using `golang.org/x/time/rate` — no external service required:
+
+| Layer | Limit | Purpose |
+|-------|-------|---------|
+| Global | 500 RPS / burst 1000 | Protects overall server capacity |
+| Per-IP | 20 RPS / burst 40 | Prevents abuse from a single client |
+| Per-Route | 100 RPS / burst 200 | Shields expensive endpoints |
+
+---
+
+## Running Tests
+
+```bash
+go test ./...           # All tests
+go test ./... -v        # Verbose output
+go test -race ./...     # Race condition detection
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Language | Go 1.21+ |
+| HTTP Framework | Gin |
+| ORM | GORM |
+| Database | SQLite |
+| Auth | JWT (`golang-jwt/jwt`) |
+| Rate Limiting | `golang.org/x/time/rate` |
+| API Docs | Swaggo / Swagger UI |
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
