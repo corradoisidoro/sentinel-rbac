@@ -1,3 +1,7 @@
+// @title Sentinel RBAC API
+// @version 1.0
+// @description Sentinel RBAC authentication API.
+// @BasePath /api
 package main
 
 import (
@@ -16,6 +20,10 @@ import (
 	"github.com/corradoisidoro/sentinel-rbac/internal/repository"
 	"github.com/corradoisidoro/sentinel-rbac/internal/service"
 	"github.com/gin-gonic/gin"
+
+	_ "github.com/corradoisidoro/sentinel-rbac/docs" // Swagger docs
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -65,6 +73,8 @@ func main() {
 	// Setup Router
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Add rate limiter (production defaults – global safety limiter)
 	rateLimiter := middleware.NewRateLimiter(middleware.RateLimiterConfig{
